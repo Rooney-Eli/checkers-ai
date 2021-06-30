@@ -4,32 +4,17 @@ data class Move(
     val destinations: List<Int>
 )
 
-fun checkPossibleMoves(piece: Piece, boardSize: Int, pieces: List<Piece>): List<Move> {
+fun checkPossibleMoves(piece: Piece, boardSize: Int, pieces: List<Piece>): Move? {
     val moveList = pieceMoveRouter(piece, boardSize, pieces)
-    //val moves = Move(piece, piece.position, )
-}
 
-fun checkPieceCanMove(
-    piece: Piece,
-    boardSize: Int,
-    pieces: List<Piece>,
-    pieceCanMoveFun: (Int, Int) -> Boolean,
-    positionAfterMoveFun: (Int, Int) -> Int
-): Int {
-    if(pieceCanMoveFun(piece.position, boardSize)) {
-        val resultDestination = positionAfterMoveFun(piece.position, boardSize)
-
-        pieces.forEach {
-
-            if (it.position == resultDestination) {
-                return -1
-            }
-        }
-        return resultDestination
+    return if(moveList.isNotEmpty()) {
+        Move(piece, piece.position, moveList)
+    } else {
+        null
     }
 
-    return -1
 }
+
 
 fun pieceMoveRouter(piece: Piece, boardSize: Int, pieces: List<Piece>): List<Int> {
     val moveList = mutableListOf<Int>()
@@ -64,7 +49,7 @@ fun pieceMoveRouter(piece: Piece, boardSize: Int, pieces: List<Piece>): List<Int
             )
             if(resultUL != -1) moveList.add(resultUL)
 
-            val resultUL = checkPieceCanMove(
+            val resultUR = checkPieceCanMove(
                 piece,
                 boardSize,
                 pieces,
@@ -75,42 +60,65 @@ fun pieceMoveRouter(piece: Piece, boardSize: Int, pieces: List<Piece>): List<Int
 
         }
     } else { // is black
-        checkPieceCanMove(
+        val resultUL = checkPieceCanMove(
             piece,
             boardSize,
             pieces,
-            ::positionUpLeft,
-            ::canCaptureUpLeft,
-            ::positionAfterCaptureUpLeft
+            ::canMoveUpLeftOne,
+            ::positionUpLeft
         )
+        if(resultUL != -1) moveList.add(resultUL)
 
-        checkPieceCanMove(
+        val resultUR = checkPieceCanMove(
             piece,
             boardSize,
             pieces,
-            ::positionUpRight,
-            ::canCaptureUpRight,
-            ::positionAfterCaptureUpRight
+            ::canMoveUpRightOne,
+            ::positionUpRight
         )
+        if(resultUR != -1) moveList.add(resultUR)
 
         if(piece.isKing) {
-            checkPieceCanMove(
+            val resultDL = checkPieceCanMove(
                 piece,
                 boardSize,
                 pieces,
-                ::positionDownLeft,
-                ::canCaptureDownLeft,
-                ::positionAfterCaptureDownLeft
+                ::canMoveDownLeftOne,
+                ::positionDownLeft
             )
+            if(resultDL != -1) moveList.add(resultDL)
 
-            checkPieceCanMove(
+            val resultDR = checkPieceCanMove(
                 piece,
                 boardSize,
                 pieces,
-                ::positionDownRight,
-                ::canCaptureDownRight,
-                ::positionAfterCaptureDownRight
+                ::canMoveDownRightOne,
+                ::positionDownRight
             )
+            if(resultDR != -1) moveList.add(resultDR)
         }
     }
+    return moveList
+}
+
+fun checkPieceCanMove(
+    piece: Piece,
+    boardSize: Int,
+    pieces: List<Piece>,
+    pieceCanMoveFun: (Int, Int) -> Boolean,
+    positionAfterMoveFun: (Int, Int) -> Int
+): Int {
+    if(pieceCanMoveFun(piece.position, boardSize)) {
+        val resultDestination = positionAfterMoveFun(piece.position, boardSize)
+
+        pieces.forEach {
+
+            if (it.position == resultDestination) {
+                return -1
+            }
+        }
+        return resultDestination
+    }
+
+    return -1
 }

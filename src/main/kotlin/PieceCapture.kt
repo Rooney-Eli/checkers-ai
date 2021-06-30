@@ -5,6 +5,54 @@ data class Capture(
     val capturedPiece: Piece
 )
 
+//make the capture object like the move object
+data class CaptureSimple(
+    val origin: Int,
+    val destination: Int,
+    val routeTaken: List<Int>,
+    val capturedPositions: List<Int>,
+)
+
+fun getSimpleCaptures(piece: Piece, boardSize: Int, pieces: List<Piece>): List<CaptureSimple> {
+    val complexCapture = checkPossibleCaptures(piece, boardSize, pieces)
+
+    if(complexCapture.isEmpty()) {
+        return emptyList()
+    }
+
+    return complexCapture[complexCapture.size - 1].map {
+        parseCapture(it)
+    }
+}
+
+
+fun parseCapture(cap: Capture): CaptureSimple {
+    val finalDestination = cap.destination
+    val visitedPositions = mutableListOf<Int>()
+    val capturedPositions = mutableListOf<Int>()
+
+    fun chaseCapture(capture: Capture) {
+        if(capture.previousCapture == null) {
+            visitedPositions.add(capture.origin)
+            capturedPositions.add(capture.capturedPiece.position) }
+        else{
+            chaseCapture(capture.previousCapture)
+            visitedPositions.add(capture.origin)
+            capturedPositions.add(capture.capturedPiece.position)
+        }
+    }
+
+    chaseCapture(cap)
+    visitedPositions.add(finalDestination)
+
+    return CaptureSimple(
+        visitedPositions[0],
+        finalDestination,
+        visitedPositions,
+        capturedPositions
+    )
+}
+
 fun checkPossibleCaptures(piece: Piece, boardSize: Int, pieces: List<Piece>): List<List<Capture>> {
     val depthList = mutableListOf<MutableList<Capture>>()
     return pieceCaptureRouter(piece, boardSize, pieces, 0, depthList, previousCapture = null)
@@ -140,6 +188,11 @@ fun checkPieceCanCaptureDirection(
                 if (otherPiece.isRed != piece.isRed) {
 
                     val resultPosition = positionAfterCaptureFun(piece.position, boardSize)
+                    pieces.forEach {
+                        if (it.position == resultPosition) {
+                            return
+                        }
+                    }
 
                     //add the piece to be captured and the resulting position of the acting piece
 
